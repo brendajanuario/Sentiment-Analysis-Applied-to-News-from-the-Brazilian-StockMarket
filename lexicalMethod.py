@@ -7,9 +7,10 @@ Created on Tue Sep 22 17:05:38 2020
 
 from sklearn.datasets import load_files
 import financial_dictionary
-import confusionMatrix
 import sentiwordnetptbr
 import sentiwordnetStemmingptbr
+from sklearn.metrics import f1_score
+from sklearn.metrics import accuracy_score
 
 #dicionários SEM a apliação de stemming
 sentiwordnet = sentiwordnetptbr.sentiwordnetptbr
@@ -37,19 +38,27 @@ def loadFiles():
 def accuracyClassifier():
     encoding = 'utf-8'
     data_set, target = loadFiles()
-    hit = 0
+    y_true = []
+    y_pred = []
+    
     for index in range(0, len(data_set)):
-        hit = hit + newClassifier(str(data_set[index],encoding), target[index])
+        y_true.append(target[index])
+        y_pred.append(newClassifier(str(data_set[index],encoding), target[index]))
         
-    return hit, confusionMatrix.confusion_matrix, len(data_set)
+    
+    f1score = f1_score(y_true, y_pred,average=None)
+    accuracy = accuracy_score(y_true, y_pred)
+
+    return accuracy, f1score
         
+
 def newClassifier(new, target):
     score = 0
     words = new.split()
     for word in words:
         #comente o uso do dicionário que não deseja utilizar.
-#        if word in full_financial_dic: #dicionário financeiro todas classes
-#            score = score + full_financial_dic[word]
+        if word in full_financial_dic: #dicionário financeiro todas classes
+            score = score + full_financial_dic[word]
         
         if word in financial_dic: #dicionário financeiro positive/negative
             score = score + financial_dic[word]        
@@ -57,12 +66,22 @@ def newClassifier(new, target):
         else:    
             if word in sentiwordnet:
                 score = score + sentiwordnet[word]
-    return confusionMatrix.confusionMatrixGenerate(score, target)
+                
+    if score > 0:
+        y_pred = 1
+        
+    if score < 0:
+        y_pred = 0
+        
+    if score == 0:
+        y_pred = 2
+        
+    return y_pred
+
 
 print("\n\n\nExecução da base de dados sem stemming:\n")
-accuracy, matrix, dataSet = accuracyClassifier()
-print(accuracy," Acertos de ",dataSet, "\nAcurácia:  ", accuracy*100/dataSet, "%")
-confusionMatrix.plotMatrix(matrix)
+accuracy, f1score = accuracyClassifier()
+print('acurácia: ',accuracy ,' f1-score: ',f1score)
 
 ############################################################################
 #########               CLASSIFICADOR COM STEMMING                 #########
@@ -77,15 +96,23 @@ def loadFilesStem():
 def accuracyClassifierStem():
     encoding = 'utf-8'
     data_set, target = loadFilesStem()
-    hit = 0
+    y_true = []
+    y_pred = []
+    
     for index in range(0, len(data_set)):
-        hit = hit + newClassifierStem(str(data_set[index],encoding), target[index])
+        y_true.append(target[index])
+        y_pred.append(newClassifierStem(str(data_set[index],encoding), target[index]))
         
-    return hit, confusionMatrix.confusion_matrix, len(data_set)
+    
+    f1score = f1_score(y_true, y_pred,average=None)
+    accuracy = accuracy_score(y_true, y_pred)
+
+    return accuracy, f1score
 
 def newClassifierStem(new, target):
     score = 0
     words = new.split()
+    y_pred = 0
     
     for word in words:
         #comente o uso do dicionário que não deseja utilizar.
@@ -98,12 +125,22 @@ def newClassifierStem(new, target):
         else:
             if word in sentiwordnetStemming:
                 score = score + sentiwordnetStemming[word]
-            
-    return confusionMatrix.confusionMatrixGenerate(score, target)
+
+    if score > 0:
+        y_pred = 1
+        
+    if score < 0:
+        y_pred = 0
+        
+    if score == 0:
+        y_pred = 2
+        
+    return y_pred
 
 print("\n\n\nExecução da base de dados com stemming:\n")
-accuracy, matrix, dataSet = accuracyClassifierStem()
-print(accuracy," Acertos de ",dataSet, "\nAcurácia:  ", accuracy*100/dataSet, "%")
-confusionMatrix.plotMatrix(matrix)
+accuracy, f1score = accuracyClassifierStem()
+print('acurácia: ',accuracy ,' f1-score: ',f1score)
 
 
+#0 negativo
+#1 positivo
